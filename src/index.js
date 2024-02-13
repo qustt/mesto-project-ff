@@ -35,3 +35,57 @@ initialCards.forEach(item => {
     addCard(cardElement);
 });
 
+
+//Модальные окна
+
+
+//Выбираем элементы
+const editButton = document.querySelector('.profile__edit-button');
+const addButton = document.querySelector('.profile__add-button');
+const editPopup = document.querySelector('.popup_type_edit');
+const newCardPopup = document.querySelector('.popup_type_new-card');
+
+//Вешаем обработчики кликов
+editButton.addEventListener('click', function() {
+    openModal(editPopup);
+})
+
+addButton.addEventListener('click', function() {
+    openModal(newCardPopup);
+})
+
+
+//Функция открытия окна
+function openModal (popup) {
+    popup.classList.add('popup_is-opened');
+    const closeButton = popup.querySelector('.popup__close');
+    closeButton.addEventListener('click', function (evt) {
+        closeModal(popup);
+    });
+    document.addEventListener('keydown', escapeHandler);
+    document.addEventListener('click', clickHandler);
+}
+
+//Функция закрытия окна
+
+function closeModal (popup) {
+    popup.classList.remove('popup_is-opened');
+}
+
+
+//Функция обработки клавиши escape
+function escapeHandler(evt) {
+    if (evt.key === 'Escape') {
+        const popup = document.querySelector('.popup_is-opened');
+        closeModal(popup);
+    }
+}
+
+
+//Функция обработки клика по overlay
+function clickHandler (evt) {
+    const popup = document.querySelector('.popup_is-opened');
+    if (evt.target === popup) {
+        closeModal(popup);
+    }
+}
