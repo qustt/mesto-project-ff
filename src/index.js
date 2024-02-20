@@ -1,7 +1,7 @@
 import './pages/index.css';
 import { initialCards } from './components/cards.js';
 import { createCard, addCard, deleteCard, likeListener } from './components/card.js';
-import { openModal, closeModal, imageClickListener } from './components/modal.js';
+import { openModal, closeModal, imageClickListener, formElement, nameInput, jobInput } from './components/modal.js';
 
 //Выбираем элементы для попапов и кнопок
 const editButton = document.querySelector('.profile__edit-button');
@@ -14,10 +14,13 @@ initialCards.forEach(item => {
     const cardElement = createCard(item.name, item.link, deleteCard, likeListener, imageClickListener)
     addCard(cardElement);
 });
-
 //Вешаем обработчики кликов
 editButton.addEventListener('click', function() {
     openModal(editPopup);
+    const title = document.querySelector('.profile__title').textContent;
+    const description = document.querySelector('.profile__description').textContent;
+    nameInput.value = title;
+    jobInput.value = description;
 })
 
 addButton.addEventListener('click', function() {
