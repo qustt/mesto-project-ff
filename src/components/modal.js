@@ -6,23 +6,23 @@ import { newCardPopup, imagePopupElement } from "../index.js";
 export function openModal (popup) {
     popup.classList.add('popup_is-opened');
     document.addEventListener('keydown', escapeHandler);
-    document.addEventListener('click', clickHandler);
-    const popups = document.querySelectorAll('.popup'); //Ищем все попапы
-    popups.forEach((popup) => {
-    popup.addEventListener('click', (evt) => {
-    if (evt.target === evt.currentTarget || evt.target.classList.contains('popup__close')){
-    closeModal(popup);
-    }
-    });
-});
 }
+
+const popups = document.querySelectorAll('.popup'); //Ищем все попапы
+//Добавляем обработчик клика
+popups.forEach((popup) => {
+popup.addEventListener('click', (evt) => {
+if (evt.target === evt.currentTarget || evt.target.classList.contains('popup__close')){
+closeModal(popup);
+}
+});
+});
 
 //Функция закрытия окна
 
 export function closeModal (popup) {
     popup.classList.remove('popup_is-opened');
     document.removeEventListener('keydown', escapeHandler);
-    document.removeEventListener('click', clickHandler);
 }
 
 //Функция обработки клавиши escape
