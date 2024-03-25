@@ -1,0 +1,15 @@
+.profile__image-overlay {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100%;
+    width: 100%;
+    transition: .3s ease;
+    background: url(../../../images/edit-icon.svg) rgba(0, 0, 0, 0.8);
+    background-size: 26px 26px;
+    background-repeat: no-repeat;
+    background-position: center;
+    opacity: 0;
+}

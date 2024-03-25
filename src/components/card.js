@@ -1,5 +1,7 @@
+import { deleteCardAPI, likeCardAPI } from '../components/api.js';
 const cardTemplate = document.querySelector('#card-template').content;
 const cardList = document.querySelector('.places__list');
+
 
 //Создаем функцию createCard
 export function createCard(name, link, deleteCard, likeListener, imageClickListener) {
@@ -29,6 +31,7 @@ export function addCardPrepend(cardElement) {
 //Создаем функцию удаления карты
 export function deleteCard(evt) {
     const card = evt.target.closest('.card');
+    deleteCardAPI(card);
     card.remove();
 }
 
@@ -36,4 +39,5 @@ export function deleteCard(evt) {
 
  export function likeListener (evt) {
   evt.target.classList.toggle('card__like-button_is-active');
+  likeCardAPI(evt.target.closest('.card__like-button'), evt.target.closest('.card'));
 }

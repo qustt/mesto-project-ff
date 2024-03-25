@@ -11,7 +11,7 @@
 }
 
 .popup__input:last-of-type {
-  margin-bottom: 0;
+  margin-bottom: 10px;
 }
 
 @media screen and (max-width: 568px) {
@@ -19,4 +19,13 @@
     font-size: 12px;
     line-height: 15px;
   }
+}
+
+
+.popup__input_type_error {
+  border-color: #FF0000;
+}
+
+.input__error {
+  color: #FF0000;
 }

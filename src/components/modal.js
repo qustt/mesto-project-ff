@@ -1,7 +1,9 @@
 //Модальные окна
 
-import { addCard, addCardPrepend, createCard, deleteCard, likeListener } from "./card";
-import { newCardPopup, imagePopupElement } from "../index.js";
+import { addCardPrepend, createCard, deleteCard, likeListener } from "./card";
+import { imagePopupElement, saveProfileButton, saveAvatarButton, saveCardButton } from "../index.js";
+import { clearValidation } from "./validation.js";
+import { renderLoading, saveProfile, pushNewCard, changeAvatar } from './api.js';
 //Функция открытия окна
 export function openModal (popup) {
     popup.classList.add('popup_is-opened');
@@ -50,8 +52,9 @@ export const jobInput = formElement.querySelector('.popup__input_type_descriptio
 
 
 
-// Обработчик «отправки» формы
+// Обработчик «отправки» формы профиля
 function handleProfileFormSubmit(evt) {
+    renderLoading(true, saveProfileButton);
     evt.preventDefault();
     // Получите значение полей jobInput и nameInput из свойства value
     const jobValue = jobInput.value;
@@ -62,6 +65,7 @@ function handleProfileFormSubmit(evt) {
     // Вставьте новые значения с помощью textContent
     title.textContent = nameValue;
     description.textContent = jobValue;
+    saveProfile();
 }
 
 // Прикрепляем обработчик к форме:
@@ -77,14 +81,23 @@ const cardNameInput = plusFormElement.querySelector('.popup__input_type_card-nam
 const urlInput = plusFormElement.querySelector('.popup__input_type_url');
 
 function addCardSubmit(evt) {
+    renderLoading(true, saveCardButton);
     evt.preventDefault(); 
     const cardNameValue = cardNameInput.value;
     const urlValue = urlInput.value;
     const newCard = createCard(cardNameValue, urlValue, deleteCard, likeListener, imageClickListener);
     addCardPrepend(newCard);
+    pushNewCard(cardNameValue, urlValue);
     cardNameInput.value = '';
     urlInput.value = '';
-    closeModal(newCardPopup);
+    clearValidation(plusFormElement, {
+        formSelector: '.popup__form',
+        inputSelector: '.popup__input',
+        submitButtonSelector: '.popup__button',
+        inactiveButtonClass:'popup__button_inactive',
+        inputErrorClass: 'popup__input_type_error',
+        errorClass: 'input__error'
+      });
 }
 
 // Прикрепляем обработчик к форме:
@@ -99,3 +112,18 @@ export function imageClickListener (evt) {
     image.alt = cardImage.alt;
     openModal(imagePopupElement);
 }
+
+//Для попапа редактирования аватара
+
+const avatarFormElement = document.querySelector('.popup__form[name="new-avatar"]');
+// Обработчик «отправки» формы аватара
+function handleAvatarFormSubmit(evt) {
+    renderLoading(true, saveAvatarButton);
+    evt.preventDefault();
+    const avatarInput = avatarFormElement.querySelector('.popup__input_type_avatar');
+    const url = avatarInput.value;
+    changeAvatar(url);
+    avatarFormElement.reset();
+}
+
+avatarFormElement.addEventListener('submit', handleAvatarFormSubmit);
