@@ -95,7 +95,7 @@ function hasInvalidInput(inputList) {
 //      Функция добавляет и убирает неактивный стиль и делает элемент неактивным/активным
 //=================
 
-function toggleButtonState(obj, inputList, buttonElement) {
+export function toggleButtonState(obj, inputList, buttonElement) {
   if (hasInvalidInput(inputList)) {
     buttonElement.classList.add(obj.inactiveButtonClass);
     buttonElement.setAttribute("disabled", "disabled");
@@ -121,3 +121,8 @@ export function clearValidation(profileForm, validationConfig) {
     hideInputError(validationConfig, profileForm, element);
   });
 }
+
+export function disableButton(obj, button){
+  button.classList.add(obj.inactiveButtonClass);
+  button.setAttribute("disabled", "disabled");
+};

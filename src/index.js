@@ -1,8 +1,8 @@
 import "./pages/index.css";
 import { createCard, likeListener, checkOwner, likePreloader } from "./components/card.js"
 import { openModal, closeModal} from "./components/modal.js";
-import { enableValidation, clearValidation, validationConfig } from "./components/validation.js";
-import { getCards, showLikes, getProfile, renderLoading, pushNewCard, deleteCardAPI, pushLike, deleteLike, saveProfile, changeAvatar } from "./components/api.js";
+import { enableValidation, clearValidation, validationConfig, disableButton } from "./components/validation.js";
+import { getCards, getProfile, renderLoading, pushNewCard, deleteCardAPI, pushLike, deleteLike, saveProfile, changeAvatar } from "./components/api.js";
 
 
 //================================================================================
@@ -64,11 +64,18 @@ function addCardPrepend(cardElement) {
 }
 
 
-function deleteCard(evt) {
-    const card = evt.target.closest('.card');
+function deleteCard(card) {
     card.remove();
 }
 
+ //=================
+ //Функция добавляет лайки на страницу
+ //=================
+ const showLikes = (likes, card) => {
+  const span = card.querySelector('.likes');
+  span.textContent = likes.length;
+  return card;
+};
 //================================================================================
 
 
@@ -84,14 +91,14 @@ Promise.all([getCards(), getProfile()])
   const userId = profile._id;
   //  Работаем с картами
   cards.forEach((element) => {
-    const card = createCard(element.name, element.link, deleteCard, likeListener, imageClickListener, cardTemplate);
+    const card = createCard(element.name, element.link, likeListener, imageClickListener, cardTemplate);
     const likes = element.likes;
     checkOwner(element, card, userId);
     const delBut = card.querySelector('.card__delete-button');
   //  Очень сильно здесь устал, не нашел как по-другому. Слушатель должен сниматься т.к указал параметр.
     if (delBut){
       delBut.addEventListener('click', function(){
-        deleteCardAPI(element._id);
+        deleteCardAPI(element._id, deleteCard, card);
       }, true);
     };
     showLikes(likes, card);
@@ -182,7 +189,7 @@ function handleAvatarFormSubmit(evt) {
   renderLoading(true, saveAvatarButton);
   evt.preventDefault();
   const avatarUrl = avatarInput.value;
-  changeAvatar(avatarUrl, profileImage, closeModal, avatarPopup, saveAvatarButton);
+  changeAvatar(avatarUrl, profileImage, closeModal, avatarPopup, saveAvatarButton, enableValidation, validationConfig);
   avatarFormElement.reset();
 }
 
@@ -218,9 +225,8 @@ popups.forEach((popup) => {
 function addCardSubmit(evt) {
   renderLoading(true, saveCardButton);
   evt.preventDefault();
-  const newCard = createCard(cardNameInput.value, urlInput.value, deleteCard, likeListener, imageClickListener, cardTemplate);
-  addCardPrepend(newCard);
-  pushNewCard(cardNameInput.value, urlInput.value, cardNameInput, urlInput, closeModal, newCardPopup, saveCardButton);
+  const newCard = createCard(cardNameInput.value, urlInput.value, likeListener, imageClickListener, cardTemplate);
+  pushNewCard(cardNameInput.value, urlInput.value, cardNameInput, urlInput, closeModal, newCardPopup, saveCardButton, enableValidation, validationConfig, newCardClickHandler, newCard, addCardPrepend);
   clearValidation(plusFormElement, validationConfig, saveCardButton);
 }
 
@@ -241,12 +247,28 @@ function likeHandler (evt) {
   cardsCopy.forEach( (element) => {
     if ((element.name === cardTitle)&&(element.link === cardLink)) {
       if (evt.target.classList.contains('card__like-button_is-active')){
-        pushLike(element._id, card);
+        pushLike(element._id, card, showLikes);
       }
       else {
-        deleteLike(element._id, card);
+        deleteLike(element._id, card, showLikes);
       }
     }
   })
+};
+
+function newCardClickHandler(ownerId, card){
+  const delBut = card.querySelector('.card__delete-button');
+  const likeButton = card.querySelector('.card__like-button');
+  delBut.addEventListener('click', function(){
+    deleteCardAPI(ownerId, deleteCard, card);
+  }, true);
+  likeButton.addEventListener('click', function(){
+    if (likeButton.classList.contains('card__like-button_is-active')){
+      pushLike(ownerId, card, showLikes);
+    }
+    else {
+      deleteLike(ownerId, card, showLikes);
+    }
+  });
 };
 

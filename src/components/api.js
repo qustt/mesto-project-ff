@@ -75,7 +75,7 @@ export const getProfile = () => {
  //=================
  //Функция добавления новой карточки на сервер
  //=================
- export const pushNewCard = (cardName, cardLink, nameInput, linkInput, closeModal, newCardPopup, button) => {
+ export const pushNewCard = (cardName, cardLink, nameInput, linkInput, closeModal, newCardPopup, button, enableValidation, validationConfig, newCardClickHandler, card, addCardPrepend) => {
    fetch(`${config.source}/cards`, {
      method: `POST`,
      headers: {
@@ -92,27 +92,20 @@ export const getProfile = () => {
       renderLoading(false, button);
       nameInput.value = "";
       linkInput.value = "";
+      enableValidation(validationConfig);
       closeModal(newCardPopup);
+      newCardClickHandler(res._id, card);
+      addCardPrepend(card);
     })
     .catch((err) => {
      console.log(err);
     })
  };
- 
- //=================
- //Функция добавляет лайки на страницу
- //=================
- export const showLikes = (likes, card) => {
-   const span = card.querySelector('.likes');
-   span.textContent = likes.length;
-   return card;
- }
- 
 
  //=================
  //Функция отправляет запрос на удаление карты с сервера
  //=================
- export const deleteCardAPI = (ownerId) => {
+ export const deleteCardAPI = (ownerId, deleteCard, card) => {
   fetch(`${config.source}/cards/${ownerId}`, {
     method: `DELETE`,
     headers: {
@@ -120,16 +113,19 @@ export const getProfile = () => {
     }
   })
   .then (res => getResponseData(res))
+  .then (res => {
+    deleteCard(card);
+  })
   .catch((err) => {
    console.log(err);
   })
-}
+};
  
 
  //=================
  //Функция отправляет запрос на постановку лайка
  //=================
- export const pushLike = (cardId, card) => {
+ export const pushLike = (cardId, card, showLikes) => {
   fetch(`${config.source}/cards/likes/${cardId}`, { 
     method: `PUT`, 
     headers: { 
@@ -149,7 +145,7 @@ export const getProfile = () => {
  //=================
  //Функция отправляет запрос на удаление лайка
  //================= 
- export const deleteLike = (cardId, card) => {
+ export const deleteLike = (cardId, card, showLikes) => {
   fetch(`${config.source}/cards/likes/${cardId}`, { 
     method: `DELETE`, 
     headers: { 
@@ -168,7 +164,7 @@ export const getProfile = () => {
  //=================
  //Функция меняет аватар и отправляет его на сервер
  //=================
- export const changeAvatar = (link, profileImage, closeModal, avatarPopup, button) => {
+ export const changeAvatar = (link, profileImage, closeModal, avatarPopup, button, enableValidation, validationConfig) => {
    fetch(`${config.source}/users/me/avatar`, {
      method: `PATCH`,
      headers: {
@@ -183,6 +179,7 @@ export const getProfile = () => {
     .then (() => {
       profileImage.style.backgroundImage = `url(${link})`;
       renderLoading(false, button);
+      enableValidation(validationConfig);
       closeModal(avatarPopup);
     })
     .catch((err) => {
