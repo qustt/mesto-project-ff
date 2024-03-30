@@ -3,149 +3,81 @@
 //==========Интеграция с API=============
 //=======================================
 
-import { createCard, addCard, deleteCard, likeListener } from './card.js';
-import { imageClickListener } from './modal.js';
-import { saveProfileButton, saveAvatarButton, saveCardButton, profileDescription, profileTitle, profileImage } from "../index.js";
-
 //=================
 //Переменная служит для конфигурации параметров запроса к API
 //=================
  export const config = {
-  source: {
-   cohort: 'https://nomoreparties.co/v1/wff-cohort-9/',
-   profile: 'https://nomoreparties.co/v1/wff-cohort-9/users/me',
-   cards: 'https://nomoreparties.co/v1/wff-cohort-9/cards',
-   likes: 'https://nomoreparties.co/v1/wff-cohort-9/cards/likes',
-  },
+  source: 'https://nomoreparties.co/v1/wff-cohort-9',
   headers: {
      authorization: '5993e96e-94d9-4e52-a8a8-15583d137850',
-     method: {
-       get: 'GET',
-       post: 'POST',
-       patch: 'PATCH',
-       put: 'PUT',
-       delete: 'DELETE',
-    }
   }
  };
 
-//Получаем данные профиля с сервера и передаем в функцию, которая их отображает на странице
-const getProfile = () => {
-    fetch(`${config.source.profile}`, {
-     method: `${config.headers.method.get}`,
+//Получаем данные профиля с сервера 
+export const getProfile = () => {
+    return fetch(`${config.source}/users/me`, {
+     method: `GET`,
      headers: {
        authorization: `${config.headers.authorization}`
      }
     })
-    .then(res => {
-     if (res.ok){
-       return res.json();
-     }
-     else {
-       return Promise.reject(`Ошибка загрузки профиля ${res.status}`);
-     }
-    })
-    .then(data => loadProfileData(data))
+    .then (res => getResponseData(res))
     .catch((err) => {
      console.log(err);
     })
     };
  //=================
- //Функция получает данные карточек с сервера и передает в другую функцию, которая создает карточки
+ //Функция получает данные карточек с сервера
  //================= 
- const getCards = () => {
-   fetch(`${config.source.cards}`, {
-     method: `${config.headers.method.get}`,
+
+ export const getCards = () => {
+   return fetch(`${config.source}/cards`, {
+     method: `GET`,
      headers: {
        authorization: `${config.headers.authorization}`,
      }
     })
-    .then (res => {
-     if (res.ok){
-       return res.json();
-     }
-     else {
-       return Promise.reject(`Ошибка загрузки карт ${res.status}`);
-     }
-    })
-    .then(data => loadCards(data))
+    .then (res => getResponseData(res))
     .catch((err) => {
      console.log(err);
     })
  };
 
- 
- //=================
- //Функция отображения данных учетной записи на странице
- //=================
- let userId = '';
- function loadProfileData(data){
-     profileTitle.textContent = data.name;
-     profileDescription.textContent = data.about;
-     profileImage.style.backgroundImage = `url(${data.avatar})`;
-     userId = data._id;
-   };
- //=================
- //Функция отображения загруженных карточек на странице
- //=================
- let cardsData;
- function loadCards(data) {
-   data.forEach(function(element){
-     const likes = element.likes;
-     const cardElement = createCard(element.name, element.link, deleteCard, likeListener, imageClickListener);
-     checkOwner(element, cardElement);
-     showLikes(likes, cardElement);
-     addCard(cardElement);
-   })
-   cardsData = data;
- };
- 
- //=================
- //Ждем, пока загрузится вся инфа (или ошибка), после чего отображаем ее
- //=================
- Promise.all([getProfile(), getCards()]);
- 
- 
- 
+
  //=================
  //Функция сохранения профиля
  //=================
  
- export const saveProfile = () => {
-   fetch(`${config.source.profile}`, {
-     method: `${config.headers.method.patch}`,
+ export const saveProfile = (profileTitle, profileDescription, jobValue, nameValue, closeModal, editPopup, button) => {
+   fetch(`${config.source}/users/me`, {
+     method: `PATCH`,
      headers: {
        authorization: `${config.headers.authorization}`,
        'Content-Type': 'application/json'
      },
      body: JSON.stringify({
-       name: `${profileTitle.textContent}`,
-       about: `${profileDescription.textContent}`
+       name: `${nameValue}`,
+       about: `${jobValue}`
      })
     })
-    .then (res => {
-     if (res.ok){
- 
-       return res.json()
-     }
-     else {
-       return Promise.reject(`Ошибка ${res.status}`);
-     }
+    .then ( res => getResponseData(res))
+    .then ( res => {
+      profileTitle.textContent = nameValue;
+      profileDescription.textContent = jobValue;
+      renderLoading(false, button);
+      closeModal(editPopup);
     })
     .catch((err) => {
      console.log(err);
     })
-    .finally(() => {
-     renderLoading(false, saveProfileButton);
-   })
  };
  
  //=================
  //Функция добавления новой карточки на сервер
  //=================
- export const pushNewCard = (cardName, cardLink) => {
-   fetch(`${config.source.cards}`, {
-     method: `${config.headers.method.post}`,
+ export const pushNewCard = (cardName, cardLink, nameInput, linkInput, closeModal, newCardPopup, button) => {
+   fetch(`${config.source}/cards`, {
+     method: `POST`,
      headers: {
        authorization: `${config.headers.authorization}`,
        'Content-Type': 'application/json'
@@ -155,134 +87,90 @@ const getProfile = () => {
        link: `${cardLink}`,
      })
     })
-    .then (res => {
-     if (res.ok){
-       return res.json()
-     }
-     else {
-       return Promise.reject(`Ошибка ${res.status}`);
-     }
+    .then (res => getResponseData(res))
+    .then ( res => {
+      renderLoading(false, button);
+      nameInput.value = "";
+      linkInput.value = "";
+      closeModal(newCardPopup);
     })
     .catch((err) => {
      console.log(err);
     })
-    .finally(() => {
-     renderLoading(false, saveCardButton);
-   })
  };
  
  //=================
- //Функция добавляет лайки на страницу (используется в loadCards)
+ //Функция добавляет лайки на страницу
  //=================
- const showLikes = (likes, card) => {
+ export const showLikes = (likes, card) => {
    const span = card.querySelector('.likes');
    span.textContent = likes.length;
    return card;
  }
  
+
  //=================
- //Функция проверяет, кто добавил карточку, и убирает помойку с чужих карт (используется в loadCards)
+ //Функция отправляет запрос на удаление карты с сервера
  //=================
- const checkOwner = (element, card) => {
-   if (userId !== element.owner._id){
-     const deleteButton = card.querySelector('.card__delete-button');
-     deleteButton.remove();
-     return card;
-   }
-   else {
-     return card;
-   }
- };
- 
- export const deleteCardAPI = (card) => {
-   const cardName = card.querySelector('.card__title').textContent;
-   const cardLink = card.querySelector('.card__image').src;
-   cardsData.forEach((element) => {
-     if ((element.name === cardName)&&(element.link === cardLink)){
-       fetch(`${config.source.cards}/${element._id}`, {
-         method: `${config.headers.method.delete}`,
-         headers: {
-           authorization: `${config.headers.authorization}`,
-         }
-       })
-     }
-   })
- };
- 
- 
- //=================
- //Функция постановки лайка, использует функцию addLikes (ниже), на вход получает кнопку и карту
- //Проверяет совпадение имени, из ответа от API актуализирует лайки
- //=================
- export const likeCardAPI = (button, card) => {
-   const cardName = card.querySelector('.card__title').textContent;
-   cardsData.forEach((element) => {
-     if (button.classList.contains('card__like-button_is-active')){
-       if (element.name === cardName){
-         fetch(`${config.source.likes}/${element._id}`, {
-           method: `${config.headers.method.put}`,
-           headers: {
-             authorization: `${config.headers.authorization}`,
-           }
-         })
-         .then (res => {
-           if (res.ok){
-             return res.json();
-           }
-           else {
-             return Promise.reject(`Ошибка ${res.status}`);
-           }
-          })
-          .catch((err) => {
-           console.log(err);
-          })
-         .then ((res) => {
-           addLikes(res.likes, card);
-         })
-       }
-     }
-     else {
-       if (element.name === cardName){
-         fetch(`${config.source.likes}/${element._id}`, {
-           method: `${config.headers.method.delete}`,
-           headers: {
-             authorization: `${config.headers.authorization}`,
-           }
-         })
-         .then (res => {
-           if (res.ok){
-             return res.json();
-           }
-           else {
-             return Promise.reject(`Ошибка ${res.status}`);
-           }
-          })
-          .catch((err) => {
-           console.log(err);
-          })
-         .then ((res) => {
-           addLikes(res.likes, card);
-         })
-       }
-     }
-   })
- };
- 
- //=================
- //Функция вспомогательная для likeCardApi, актуализирует лайки и подгружает на страницу
- //=================
- const addLikes = (likes, card) => {
-   const span = card.querySelector('.likes');
-   span.textContent = likes.length;
- }
- 
+ export const deleteCardAPI = (ownerId) => {
+  fetch(`${config.source}/cards/${ownerId}`, {
+    method: `DELETE`,
+    headers: {
+      authorization: `${config.headers.authorization}`,
+    }
+  })
+  .then (res => getResponseData(res))
+  .catch((err) => {
+   console.log(err);
+  })
+}
  
 
+ //=================
+ //Функция отправляет запрос на постановку лайка
+ //=================
+ export const pushLike = (cardId, card) => {
+  fetch(`${config.source}/cards/likes/${cardId}`, { 
+    method: `PUT`, 
+    headers: { 
+      authorization: `${config.headers.authorization}`, 
+    } 
+  })
+   .then (res => getResponseData(res))
+   .then (res => {
+    showLikes(res.likes, card);
+   })
+   .catch((err) => {
+    console.log(err);
+   }) 
+ };
+
+
+ //=================
+ //Функция отправляет запрос на удаление лайка
+ //================= 
+ export const deleteLike = (cardId, card) => {
+  fetch(`${config.source}/cards/likes/${cardId}`, { 
+    method: `DELETE`, 
+    headers: { 
+      authorization: `${config.headers.authorization}`, 
+    } 
+  }) 
+   .then (res => getResponseData(res))
+   .then (res => {
+    showLikes(res.likes, card);
+   })
+   .catch((err) => {
+    console.log(err);
+   })
+ };
+
+ //=================
  //Функция меняет аватар и отправляет его на сервер
- export const changeAvatar = (link) => {
-   profileImage.style.backgroundImage = `url(${link})`;
-   fetch(`${config.source.profile}/avatar`, {
-     method: `${config.headers.method.patch}`,
+ //=================
+ export const changeAvatar = (link, profileImage, closeModal, avatarPopup, button) => {
+   fetch(`${config.source}/users/me/avatar`, {
+     method: `PATCH`,
      headers: {
        authorization: `${config.headers.authorization}`,
        'Content-Type': 'application/json'
@@ -291,29 +179,38 @@ const getProfile = () => {
        avatar: `${link}`
      })
     })
-    .then (res => {
-     if (res.ok){
-       return res.json();
-     }
-     else {
-       return Promise.reject(`Ошибка ${res.status}`);
-     }
+    .then (res => getResponseData(res))
+    .then (() => {
+      profileImage.style.backgroundImage = `url(${link})`;
+      renderLoading(false, button);
+      closeModal(avatarPopup);
     })
     .catch((err) => {
      console.log(err);
     })
-    .finally(() => {
-     renderLoading(false, saveAvatarButton);
-   })
  }; 
- 
- //Функция, изменяющая текст кнопки во время loading
+
+ //=================
+ //Функция, изменяющая текст кнопки во время отправки форм
+ //=================
  export function renderLoading(isLoading, button) {
    if (isLoading) {
      button.textContent = 'Сохранение...';
+     button.classList.add('popup__button_inactive');
+     button.setAttribute("disabled", "disabled");
    }
    else {
      button.textContent = 'Сохранить';
+     button.classList.remove('popup__button_inactive');
+     button.removeAttribute("disabled");
    }
  };
  
+ function getResponseData(res) {
+  if (res.ok){
+    return res.json();
+  }
+  else {
+    return Promise.reject(`Ошибка ${res.status}`);
+  }
+ }

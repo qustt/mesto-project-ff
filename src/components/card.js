@@ -1,10 +1,7 @@
-import { deleteCardAPI, likeCardAPI } from '../components/api.js';
-const cardTemplate = document.querySelector('#card-template').content;
-const cardList = document.querySelector('.places__list');
-
-
-//Создаем функцию createCard
-export function createCard(name, link, deleteCard, likeListener, imageClickListener) {
+//=================
+//Функция содания карты
+//=================
+export function createCard(name, link, deleteCard, likeListener, imageClickListener, cardTemplate) {
     const cardElement = cardTemplate.querySelector('.card').cloneNode(true);
     const deleteButton = cardElement.querySelector('.card__delete-button');
     const cardImage = cardElement.querySelector('.card__image');
@@ -18,26 +15,31 @@ export function createCard(name, link, deleteCard, likeListener, imageClickListe
     cardImage.addEventListener('click', imageClickListener);
     return(cardElement);
 }
-
-//Создаем функцию addCard
-export function addCard(cardElement) {
-  cardList.append(cardElement);
-}
-
-export function addCardPrepend(cardElement) {
-  cardList.prepend(cardElement);
-}
-
-//Создаем функцию удаления карты
-export function deleteCard(evt) {
-    const card = evt.target.closest('.card');
-    deleteCardAPI(card);
-    card.remove();
-}
-
+//=================
 //Создаем функцию-обработчик лайка
-
+//=================
  export function likeListener (evt) {
   evt.target.classList.toggle('card__like-button_is-active');
-  likeCardAPI(evt.target.closest('.card__like-button'), evt.target.closest('.card'));
 }
+
+ //=================
+ //Функция проверяет, кто добавил карточку, и убирает помойку с чужих карт
+ //=================
+ export const checkOwner = (element, card, userId) => {
+  if (userId !== element.owner._id){
+    const deleteButton = card.querySelector('.card__delete-button');
+    deleteButton.remove();
+    return card;
+  }
+  else {
+    return card;
+  }
+};
+
+
+ //=================
+ //Функция красит кнопку лайка, чтобы он отображался, если был поставлен ранее
+ //=================
+export function likePreloader(likeButton){
+  likeButton.classList.toggle('card__like-button_is-active');
+};
