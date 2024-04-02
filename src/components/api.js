@@ -1,11 +1,12 @@
+//=======================================
+//========  Интеграция с API  ===========
+//=======================================
 
-//=======================================
-//==========Интеграция с API=============
-//=======================================
 
 //=================
 //Переменная служит для конфигурации параметров запроса к API
 //=================
+
  export const config = {
   source: 'https://nomoreparties.co/v1/wff-cohort-9',
   headers: {
@@ -13,7 +14,10 @@
   }
  };
 
-//Получаем данные профиля с сервера 
+ //=================
+ //Функция получает данные профиля с сервера
+ //================= 
+
 export const getProfile = () => {
     return fetch(`${config.source}/users/me`, {
      method: `GET`,
@@ -22,10 +26,8 @@ export const getProfile = () => {
      }
     })
     .then (res => getResponseData(res))
-    .catch((err) => {
-     console.log(err);
-    })
     };
+
  //=================
  //Функция получает данные карточек с сервера
  //================= 
@@ -38,9 +40,6 @@ export const getProfile = () => {
      }
     })
     .then (res => getResponseData(res))
-    .catch((err) => {
-     console.log(err);
-    })
  };
 
 
@@ -48,7 +47,7 @@ export const getProfile = () => {
  //Функция сохранения профиля
  //=================
  
- export const saveProfile = (profileTitle, profileDescription, jobValue, nameValue, closeModal, editPopup, button) => {
+ export const saveProfile = (jobValue, nameValue, saveProfileHandler) => {
    fetch(`${config.source}/users/me`, {
      method: `PATCH`,
      headers: {
@@ -62,10 +61,7 @@ export const getProfile = () => {
     })
     .then ( res => getResponseData(res))
     .then ( res => {
-      profileTitle.textContent = nameValue;
-      profileDescription.textContent = jobValue;
-      renderLoading(false, button);
-      closeModal(editPopup);
+      saveProfileHandler(res);
     })
     .catch((err) => {
      console.log(err);
@@ -75,7 +71,8 @@ export const getProfile = () => {
  //=================
  //Функция добавления новой карточки на сервер
  //=================
- export const pushNewCard = (cardName, cardLink, nameInput, linkInput, closeModal, newCardPopup, button, enableValidation, validationConfig, newCardClickHandler, card, addCardPrepend) => {
+
+ export const pushNewCard = (cardName, cardLink, card, pushNewCardHandler) => {
    fetch(`${config.source}/cards`, {
      method: `POST`,
      headers: {
@@ -89,13 +86,7 @@ export const getProfile = () => {
     })
     .then (res => getResponseData(res))
     .then ( res => {
-      renderLoading(false, button);
-      nameInput.value = "";
-      linkInput.value = "";
-      enableValidation(validationConfig);
-      closeModal(newCardPopup);
-      newCardClickHandler(res._id, card);
-      addCardPrepend(card);
+      pushNewCardHandler(res, card);
     })
     .catch((err) => {
      console.log(err);
@@ -105,7 +96,8 @@ export const getProfile = () => {
  //=================
  //Функция отправляет запрос на удаление карты с сервера
  //=================
- export const deleteCardAPI = (ownerId, deleteCard, card) => {
+
+ export const deleteCardAPI = (ownerId, card, deleteCardApiHandler) => {
   fetch(`${config.source}/cards/${ownerId}`, {
     method: `DELETE`,
     headers: {
@@ -114,7 +106,7 @@ export const getProfile = () => {
   })
   .then (res => getResponseData(res))
   .then (res => {
-    deleteCard(card);
+    deleteCardApiHandler(res, card);
   })
   .catch((err) => {
    console.log(err);
@@ -125,7 +117,8 @@ export const getProfile = () => {
  //=================
  //Функция отправляет запрос на постановку лайка
  //=================
- export const pushLike = (cardId, card, showLikes) => {
+
+ export const pushLike = (cardId, card, likeApiHandler) => {
   fetch(`${config.source}/cards/likes/${cardId}`, { 
     method: `PUT`, 
     headers: { 
@@ -134,7 +127,7 @@ export const getProfile = () => {
   })
    .then (res => getResponseData(res))
    .then (res => {
-    showLikes(res.likes, card);
+    likeApiHandler(res, card);
    })
    .catch((err) => {
     console.log(err);
@@ -145,7 +138,8 @@ export const getProfile = () => {
  //=================
  //Функция отправляет запрос на удаление лайка
  //================= 
- export const deleteLike = (cardId, card, showLikes) => {
+
+ export const deleteLike = (cardId, card, likeApiHandler) => {
   fetch(`${config.source}/cards/likes/${cardId}`, { 
     method: `DELETE`, 
     headers: { 
@@ -154,7 +148,8 @@ export const getProfile = () => {
   }) 
    .then (res => getResponseData(res))
    .then (res => {
-    showLikes(res.likes, card);
+    likeApiHandler(res, card);
+
    })
    .catch((err) => {
     console.log(err);
@@ -164,7 +159,8 @@ export const getProfile = () => {
  //=================
  //Функция меняет аватар и отправляет его на сервер
  //=================
- export const changeAvatar = (link, profileImage, closeModal, avatarPopup, button, enableValidation, validationConfig) => {
+
+ export const changeAvatar = (link, changeAvatarHandler) => {
    fetch(`${config.source}/users/me/avatar`, {
      method: `PATCH`,
      headers: {
@@ -177,32 +173,18 @@ export const getProfile = () => {
     })
     .then (res => getResponseData(res))
     .then (() => {
-      profileImage.style.backgroundImage = `url(${link})`;
-      renderLoading(false, button);
-      enableValidation(validationConfig);
-      closeModal(avatarPopup);
+      changeAvatarHandler();
     })
     .catch((err) => {
      console.log(err);
     })
  }; 
 
+
  //=================
- //Функция, изменяющая текст кнопки во время отправки форм
+ //Функция проверяет результат с сервера
  //=================
- export function renderLoading(isLoading, button) {
-   if (isLoading) {
-     button.textContent = 'Сохранение...';
-     button.classList.add('popup__button_inactive');
-     button.setAttribute("disabled", "disabled");
-   }
-   else {
-     button.textContent = 'Сохранить';
-     button.classList.remove('popup__button_inactive');
-     button.removeAttribute("disabled");
-   }
- };
- 
+   
  function getResponseData(res) {
   if (res.ok){
     return res.json();
@@ -210,4 +192,4 @@ export const getProfile = () => {
   else {
     return Promise.reject(`Ошибка ${res.status}`);
   }
- }
+ };

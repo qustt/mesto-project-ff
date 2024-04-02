@@ -1,8 +1,8 @@
 import "./pages/index.css";
-import { createCard, likeListener, checkOwner, likePreloader } from "./components/card.js"
+import { createCard, checkOwner, showLikes, addLikeListener, loadUserLikes, addDeleteListener, deleteCard, addLikes } from "./components/card.js"
 import { openModal, closeModal} from "./components/modal.js";
-import { enableValidation, clearValidation, validationConfig, disableButton } from "./components/validation.js";
-import { getCards, getProfile, renderLoading, pushNewCard, deleteCardAPI, pushLike, deleteLike, saveProfile, changeAvatar } from "./components/api.js";
+import { enableValidation, clearValidation } from "./components/validation.js";
+import { getCards, getProfile, pushNewCard, deleteCardAPI, pushLike, deleteLike, saveProfile, changeAvatar } from "./components/api.js";
 
 
 //================================================================================
@@ -23,6 +23,8 @@ const popups = document.querySelectorAll(".popup");
 const editPopup = document.querySelector(".popup_type_edit");
 const newCardPopup = document.querySelector(".popup_type_new-card");
 const imagePopupElement = document.querySelector(".popup_type_image");
+const imagePopupimage = imagePopupElement.querySelector(".popup__image");
+const imagePopupDescription = imagePopupElement.querySelector(".popup__caption");
 const avatarPopup = document.querySelector(".popup_type_avatar");
 const editProfileForm = editPopup.querySelector(".popup__form");
 
@@ -49,7 +51,35 @@ const jobInput = editProfileFormElement.querySelector(".popup__input_type_descri
 
 //=============================    Прочее  ======================================
 
-let cardsCopy = '';
+//=================
+//Настройки валидации
+//=================
+
+const validationConfig = {
+  formSelector: ".popup__form",
+  inputSelector: ".popup__input",
+  submitButtonSelector: ".popup__button",
+  inactiveButtonClass: "popup__button_inactive",
+  inputErrorClass: "popup__input_type_error",
+  errorClass: "input__error",
+};
+
+ //=================
+ //Функция, изменяющая текст кнопки во время отправки форм
+ //=================
+
+ function renderLoading(isLoading, button) {
+  if (isLoading) {
+    button.textContent = 'Сохранение...';
+    button.classList.add('popup__button_inactive');
+    button.setAttribute("disabled", "disabled");
+  }
+  else {
+    button.textContent = 'Сохранить';
+    button.classList.remove('popup__button_inactive');
+    button.removeAttribute("disabled");
+  }
+};
 
 //================================================================================
 //===========  Функции добавления карт на страницу и их удаления  ================
@@ -63,26 +93,9 @@ function addCardPrepend(cardElement) {
   cardList.prepend(cardElement);
 }
 
-
-function deleteCard(card) {
-    card.remove();
-}
-
- //=================
- //Функция добавляет лайки на страницу
- //=================
- const showLikes = (likes, card) => {
-  const span = card.querySelector('.likes');
-  span.textContent = likes.length;
-  return card;
-};
-//================================================================================
-
-
 //================================================================================
 //========================  Загружаем и добавляем карты  =========================
 //================================================================================
-
 
 Promise.all([getCards(), getProfile()])
 .then((res) => {
@@ -91,40 +104,23 @@ Promise.all([getCards(), getProfile()])
   const userId = profile._id;
   //  Работаем с картами
   cards.forEach((element) => {
-    const card = createCard(element.name, element.link, likeListener, imageClickListener, cardTemplate);
+    const card = createCard(element.name, element.link, imageClickListener, cardTemplate);
     const likes = element.likes;
     checkOwner(element, card, userId);
-    const delBut = card.querySelector('.card__delete-button');
-  //  Очень сильно здесь устал, не нашел как по-другому. Слушатель должен сниматься т.к указал параметр.
-    if (delBut){
-      delBut.addEventListener('click', function(){
-        deleteCardAPI(element._id, deleteCard, card);
-      }, true);
-    };
     showLikes(likes, card);
-    const likeButton = card.querySelector('.card__like-button');
-    likes.forEach((like) => {
-      if (like._id === userId) {
-        likePreloader(likeButton);
-      }
-    });
-    likeButton.addEventListener('click', likeHandler);
+    loadUserLikes(likes, card, userId);
+    addDeleteListener(card, deleteCardAPI, element, deleteCardApiHandler);
+    addLikeListener(card, element, deleteLike, pushLike, likeApiHandler);
     addCard(card);
 });
   //  Работаем с профилем
   profileTitle.textContent = profile.name;
   profileDescription.textContent = profile.about;
   profileImage.style.backgroundImage = `url(${profile.avatar})`;
-  // Сохраняем полученные данные 
-  cardsCopy = cards;
 })
 .catch((err) => {
   console.log(`Произошла ошибка: ${err}`);
 });
-
-
-
-
 
 //================================================================================
 //================  Вешаем обработчики кликов для попапов  =======================
@@ -153,12 +149,17 @@ newCardPopup.classList.add("popup_is-animated");
 imagePopupElement.classList.add("popup_is-animated");
 
 
-//Функция обработки клика по изображению
+ //=================
+ //Функция обработки клика по изображению
+ //================= 
+ 
 function imageClickListener(evt) {
-  const image = imagePopupElement.querySelector(".popup__image");
-  const cardImage = evt.target.closest(".card__image");
-  image.src = cardImage.src;
-  image.alt = cardImage.alt;
+  const card = evt.target.closest(".card");
+  const cardImage = card.querySelector(".card__image");
+  const cardDesc = card.querySelector(".card__title");
+  imagePopupimage.src = cardImage.src;
+  imagePopupimage.alt = cardImage.alt;
+  imagePopupDescription.textContent = cardDesc.textContent;
   openModal(imagePopupElement);
 }
 //================================================================================
@@ -181,16 +182,14 @@ function handleProfileFormSubmit(evt) {
   evt.preventDefault();
   const jobValue = jobInput.value;
   const nameValue = nameInput.value;
-  saveProfile(profileTitle, profileDescription, jobValue, nameValue, closeModal, editPopup, saveProfileButton);
+  saveProfile(jobValue, nameValue, saveProfileHandler);
 }
 
 // Обработчик «отправки» формы аватара
 function handleAvatarFormSubmit(evt) {
   renderLoading(true, saveAvatarButton);
   evt.preventDefault();
-  const avatarUrl = avatarInput.value;
-  changeAvatar(avatarUrl, profileImage, closeModal, avatarPopup, saveAvatarButton, enableValidation, validationConfig);
-  avatarFormElement.reset();
+  changeAvatar(avatarInput.value, changeAvatarHandler);
 }
 
 //================================================================================
@@ -198,8 +197,6 @@ function handleAvatarFormSubmit(evt) {
 //================================================================================
 
 enableValidation(validationConfig);
-
-
 
 //=================
 //Обработчик клика для попапов
@@ -225,50 +222,55 @@ popups.forEach((popup) => {
 function addCardSubmit(evt) {
   renderLoading(true, saveCardButton);
   evt.preventDefault();
-  const newCard = createCard(cardNameInput.value, urlInput.value, likeListener, imageClickListener, cardTemplate);
-  pushNewCard(cardNameInput.value, urlInput.value, cardNameInput, urlInput, closeModal, newCardPopup, saveCardButton, enableValidation, validationConfig, newCardClickHandler, newCard, addCardPrepend);
+  const newCard = createCard(cardNameInput.value, urlInput.value, imageClickListener, cardTemplate);
+  pushNewCard(cardNameInput.value, urlInput.value, newCard, pushNewCardHandler);
   clearValidation(plusFormElement, validationConfig, saveCardButton);
 }
 
-//=================
-//  Обработчик клика по сердечку для поставновки лайка
-//----------------------------------------------------
-//  Если карты абсолютно одинаковые - работает плохо. 
-//  Клик мы берем из верстки, как узнать id конкретно 
-//  этой карты - для меня загадка (:с)
-//=================
-function likeHandler (evt) {
-  const card = evt.target.closest('.card');
-  const cardTitle = card.querySelector('.card__title').textContent;
-  const cardLink = card.querySelector('.card__image').src;
-  // Сделал идентификацию карты через перебор полученных карт от сервера
-  // и проверку совпадения их ссылок и имен. id карты при добавлении нужно
-  // было куда-то записывать, наверное, чтобы не было этого бага
-  cardsCopy.forEach( (element) => {
-    if ((element.name === cardTitle)&&(element.link === cardLink)) {
-      if (evt.target.classList.contains('card__like-button_is-active')){
-        pushLike(element._id, card, showLikes);
-      }
-      else {
-        deleteLike(element._id, card, showLikes);
-      }
-    }
-  })
+
+//===================================================
+//  Обработчики результатов запросов
+//===================================================
+
+//Для сохранения профиля
+function saveProfileHandler(res){
+  profileTitle.textContent = res.name;
+  profileDescription.textContent = res.about;
+  renderLoading(false, saveProfileButton);
+  closeModal(editPopup);
 };
 
-function newCardClickHandler(ownerId, card){
-  const delBut = card.querySelector('.card__delete-button');
-  const likeButton = card.querySelector('.card__like-button');
-  delBut.addEventListener('click', function(){
-    deleteCardAPI(ownerId, deleteCard, card);
-  }, true);
-  likeButton.addEventListener('click', function(){
-    if (likeButton.classList.contains('card__like-button_is-active')){
-      pushLike(ownerId, card, showLikes);
-    }
-    else {
-      deleteLike(ownerId, card, showLikes);
-    }
-  });
+//Для отправки карты
+function pushNewCardHandler(res, card){
+  renderLoading(false, saveCardButton);
+  cardNameInput.value = "";
+  urlInput.value = "";
+  clearValidation(plusFormElement, validationConfig);
+  closeModal(newCardPopup);
+  console.log(card);
+  addLikeListener(card, res, deleteLike, pushLike, likeApiHandler);
+  addDeleteListener(card, deleteCardAPI, res, deleteCardApiHandler);
+  addCardPrepend(card);
 };
 
+//Для удаления карты с сервера
+function deleteCardApiHandler(res, card){
+  deleteCard(card);
+};
+
+//Для постановки/удаления лайка
+function likeApiHandler(res, card){
+  addLikes(res.likes, card);
+};
+
+//Для смены аватара
+function changeAvatarHandler(){
+  console.log(avatarInput.value);
+  profileImage.style.backgroundImage = `url(${avatarInput.value})`;
+  renderLoading(false, saveAvatarButton);
+  clearValidation(avatarFormElement, validationConfig);
+  closeModal(avatarPopup);
+  avatarFormElement.reset();
+};
+
+//==========================================================================================//
