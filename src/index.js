@@ -1,5 +1,5 @@
 import "./pages/index.css";
-import { createCard, deleteCard, addLikes } from "./components/card.js"
+import { createCard } from "./components/card.js"
 import { openModal, closeModal} from "./components/modal.js";
 import { enableValidation, clearValidation, enableButton, disableButton } from "./components/validation.js";
 import { getCards, getProfile, pushNewCard, deleteCardAPI, pushLike, deleteLike, saveProfile, changeAvatar } from "./components/api.js";
@@ -99,11 +99,11 @@ Promise.all([getCards(), getProfile()])
 .then((res) => {
   const cards = res[0];
   const profile = res[1];
+  // Передать id из элемента карточки нельзя, т.к слетает проверка checkOwner
   const userId = profile._id;
   //  Работаем с картами
   cards.forEach((element) => {
-    const likes = element.likes;
-    const card = createCard(element.name, element.link, imageClickListener, cardTemplate, element, deleteCardAPI, deleteCardApiHandler, likes, deleteLike, pushLike, likeApiHandler, userId);
+    const card = createCard(element.name, element.link, imageClickListener, cardTemplate, element, deleteCardAPI, deleteLike, pushLike, userId);
     addCard(card);
 });
   //  Работаем с профилем
@@ -176,7 +176,12 @@ function handleProfileFormSubmit(evt) {
   const jobValue = jobInput.value;
   const nameValue = nameInput.value;
   saveProfile(jobValue, nameValue)
-  .then (res => saveProfileHandler(res))
+  .then (res => {
+    profileTitle.textContent = res.name;
+    profileDescription.textContent = res.about;
+    renderLoading(false, saveProfileButton);
+    closeModal(editPopup);
+  })
   .catch((err) => {
     console.log(err);
    })
@@ -188,7 +193,13 @@ function handleAvatarFormSubmit(evt) {
   renderLoading(true, saveAvatarButton);
   evt.preventDefault();
   changeAvatar(avatarInput.value)
-  .then(() => changeAvatarHandler())
+  .then(() => {
+    profileImage.style.backgroundImage = `url(${avatarInput.value})`;
+    renderLoading(false, saveAvatarButton);
+    clearValidation(avatarFormElement, validationConfig);
+    closeModal(avatarPopup);
+    avatarFormElement.reset();
+  })
   .catch((err) => {
     console.log(err);
    })
@@ -226,56 +237,20 @@ function addCardSubmit(evt) {
   evt.preventDefault();
   pushNewCard(cardNameInput.value, urlInput.value)
   .then(res => {
-    console.log(res);
-    const newCard = createCard(cardNameInput.value, urlInput.value, imageClickListener, cardTemplate, res, deleteCardAPI, deleteCardApiHandler, res.likes, deleteLike, pushLike, likeApiHandler, res.owner._id);
-    pushNewCardHandler(res, newCard);
-    clearValidation(plusFormElement, validationConfig, saveCardButton);
+    // Здесь получается дубль, потому что при создании карты выполняется проверка checkOwner. Вынес в отдельную переменную.
+    // Эта переменная передается, чтобы осталась иконка удаления
+    const userId = res.owner._id;
+    const newCard = createCard(cardNameInput.value, urlInput.value, imageClickListener, cardTemplate, res, deleteCardAPI, deleteLike, pushLike, userId);
+    renderLoading(false, saveCardButton);
+    cardNameInput.value = "";
+    urlInput.value = "";
+    clearValidation(plusFormElement, validationConfig);
+    closeModal(newCardPopup);
+    addCardPrepend(newCard);
   })
   .catch((err) => {
     console.log(err);
    })
 }
-
-
-//===================================================
-//  Обработчики результатов запросов
-//===================================================
-
-//Для сохранения профиля
-function saveProfileHandler(res){
-  profileTitle.textContent = res.name;
-  profileDescription.textContent = res.about;
-  renderLoading(false, saveProfileButton);
-  closeModal(editPopup);
-};
-
-//Для отправки карты
-function pushNewCardHandler(res, card){
-  renderLoading(false, saveCardButton);
-  cardNameInput.value = "";
-  urlInput.value = "";
-  clearValidation(plusFormElement, validationConfig);
-  closeModal(newCardPopup);
-  addCardPrepend(card);
-};
-
-//Для удаления карты с сервера
-function deleteCardApiHandler(res, card){
-  deleteCard(card);
-};
-
-//Для постановки/удаления лайка
-function likeApiHandler(res, card){
-  addLikes(res.likes, card);
-};
-
-//Для смены аватара
-function changeAvatarHandler(){
-  profileImage.style.backgroundImage = `url(${avatarInput.value})`;
-  renderLoading(false, saveAvatarButton);
-  clearValidation(avatarFormElement, validationConfig);
-  closeModal(avatarPopup);
-  avatarFormElement.reset();
-};
 
 //==========================================================================================//
