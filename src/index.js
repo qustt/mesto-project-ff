@@ -1,7 +1,7 @@
 import "./pages/index.css";
-import { createCard, checkOwner, showLikes, addLikeListener, loadUserLikes, addDeleteListener, deleteCard, addLikes } from "./components/card.js"
+import { createCard, deleteCard, addLikes } from "./components/card.js"
 import { openModal, closeModal} from "./components/modal.js";
-import { enableValidation, clearValidation } from "./components/validation.js";
+import { enableValidation, clearValidation, enableButton, disableButton } from "./components/validation.js";
 import { getCards, getProfile, pushNewCard, deleteCardAPI, pushLike, deleteLike, saveProfile, changeAvatar } from "./components/api.js";
 
 
@@ -71,13 +71,11 @@ const validationConfig = {
  function renderLoading(isLoading, button) {
   if (isLoading) {
     button.textContent = 'Сохранение...';
-    button.classList.add('popup__button_inactive');
-    button.setAttribute("disabled", "disabled");
+    disableButton(validationConfig, button);
   }
   else {
     button.textContent = 'Сохранить';
-    button.classList.remove('popup__button_inactive');
-    button.removeAttribute("disabled");
+    enableButton(validationConfig, button);
   }
 };
 
@@ -104,13 +102,8 @@ Promise.all([getCards(), getProfile()])
   const userId = profile._id;
   //  Работаем с картами
   cards.forEach((element) => {
-    const card = createCard(element.name, element.link, imageClickListener, cardTemplate);
     const likes = element.likes;
-    checkOwner(element, card, userId);
-    showLikes(likes, card);
-    loadUserLikes(likes, card, userId);
-    addDeleteListener(card, deleteCardAPI, element, deleteCardApiHandler);
-    addLikeListener(card, element, deleteLike, pushLike, likeApiHandler);
+    const card = createCard(element.name, element.link, imageClickListener, cardTemplate, element, deleteCardAPI, deleteCardApiHandler, likes, deleteLike, pushLike, likeApiHandler, userId);
     addCard(card);
 });
   //  Работаем с профилем
@@ -182,14 +175,23 @@ function handleProfileFormSubmit(evt) {
   evt.preventDefault();
   const jobValue = jobInput.value;
   const nameValue = nameInput.value;
-  saveProfile(jobValue, nameValue, saveProfileHandler);
+  saveProfile(jobValue, nameValue)
+  .then (res => saveProfileHandler(res))
+  .catch((err) => {
+    console.log(err);
+   })
+  
 }
 
 // Обработчик «отправки» формы аватара
 function handleAvatarFormSubmit(evt) {
   renderLoading(true, saveAvatarButton);
   evt.preventDefault();
-  changeAvatar(avatarInput.value, changeAvatarHandler);
+  changeAvatar(avatarInput.value)
+  .then(() => changeAvatarHandler())
+  .catch((err) => {
+    console.log(err);
+   })
 }
 
 //================================================================================
@@ -222,9 +224,16 @@ popups.forEach((popup) => {
 function addCardSubmit(evt) {
   renderLoading(true, saveCardButton);
   evt.preventDefault();
-  const newCard = createCard(cardNameInput.value, urlInput.value, imageClickListener, cardTemplate);
-  pushNewCard(cardNameInput.value, urlInput.value, newCard, pushNewCardHandler);
-  clearValidation(plusFormElement, validationConfig, saveCardButton);
+  pushNewCard(cardNameInput.value, urlInput.value)
+  .then(res => {
+    console.log(res);
+    const newCard = createCard(cardNameInput.value, urlInput.value, imageClickListener, cardTemplate, res, deleteCardAPI, deleteCardApiHandler, res.likes, deleteLike, pushLike, likeApiHandler, res.owner._id);
+    pushNewCardHandler(res, newCard);
+    clearValidation(plusFormElement, validationConfig, saveCardButton);
+  })
+  .catch((err) => {
+    console.log(err);
+   })
 }
 
 
@@ -247,9 +256,6 @@ function pushNewCardHandler(res, card){
   urlInput.value = "";
   clearValidation(plusFormElement, validationConfig);
   closeModal(newCardPopup);
-  console.log(card);
-  addLikeListener(card, res, deleteLike, pushLike, likeApiHandler);
-  addDeleteListener(card, deleteCardAPI, res, deleteCardApiHandler);
   addCardPrepend(card);
 };
 
@@ -265,7 +271,6 @@ function likeApiHandler(res, card){
 
 //Для смены аватара
 function changeAvatarHandler(){
-  console.log(avatarInput.value);
   profileImage.style.backgroundImage = `url(${avatarInput.value})`;
   renderLoading(false, saveAvatarButton);
   clearValidation(avatarFormElement, validationConfig);

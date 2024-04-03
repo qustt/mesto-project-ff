@@ -47,8 +47,8 @@ export const getProfile = () => {
  //Функция сохранения профиля
  //=================
  
- export const saveProfile = (jobValue, nameValue, saveProfileHandler) => {
-   fetch(`${config.source}/users/me`, {
+ export const saveProfile = (jobValue, nameValue) => {
+   return fetch(`${config.source}/users/me`, {
      method: `PATCH`,
      headers: {
        authorization: `${config.headers.authorization}`,
@@ -60,20 +60,14 @@ export const getProfile = () => {
      })
     })
     .then ( res => getResponseData(res))
-    .then ( res => {
-      saveProfileHandler(res);
-    })
-    .catch((err) => {
-     console.log(err);
-    })
  };
  
  //=================
  //Функция добавления новой карточки на сервер
  //=================
 
- export const pushNewCard = (cardName, cardLink, card, pushNewCardHandler) => {
-   fetch(`${config.source}/cards`, {
+ export const pushNewCard = (cardName, cardLink) => {
+   return fetch(`${config.source}/cards`, {
      method: `POST`,
      headers: {
        authorization: `${config.headers.authorization}`,
@@ -85,32 +79,20 @@ export const getProfile = () => {
      })
     })
     .then (res => getResponseData(res))
-    .then ( res => {
-      pushNewCardHandler(res, card);
-    })
-    .catch((err) => {
-     console.log(err);
-    })
  };
 
  //=================
  //Функция отправляет запрос на удаление карты с сервера
  //=================
 
- export const deleteCardAPI = (ownerId, card, deleteCardApiHandler) => {
-  fetch(`${config.source}/cards/${ownerId}`, {
+ export const deleteCardAPI = (ownerId) => {
+  return fetch(`${config.source}/cards/${ownerId}`, {
     method: `DELETE`,
     headers: {
       authorization: `${config.headers.authorization}`,
     }
   })
   .then (res => getResponseData(res))
-  .then (res => {
-    deleteCardApiHandler(res, card);
-  })
-  .catch((err) => {
-   console.log(err);
-  })
 };
  
 
@@ -118,20 +100,14 @@ export const getProfile = () => {
  //Функция отправляет запрос на постановку лайка
  //=================
 
- export const pushLike = (cardId, card, likeApiHandler) => {
-  fetch(`${config.source}/cards/likes/${cardId}`, { 
+ export const pushLike = (cardId) => {
+  return fetch(`${config.source}/cards/likes/${cardId}`, { 
     method: `PUT`, 
     headers: { 
       authorization: `${config.headers.authorization}`, 
     } 
   })
    .then (res => getResponseData(res))
-   .then (res => {
-    likeApiHandler(res, card);
-   })
-   .catch((err) => {
-    console.log(err);
-   }) 
  };
 
 
@@ -139,29 +115,22 @@ export const getProfile = () => {
  //Функция отправляет запрос на удаление лайка
  //================= 
 
- export const deleteLike = (cardId, card, likeApiHandler) => {
-  fetch(`${config.source}/cards/likes/${cardId}`, { 
+ export const deleteLike = (cardId) => {
+  return fetch(`${config.source}/cards/likes/${cardId}`, { 
     method: `DELETE`, 
     headers: { 
       authorization: `${config.headers.authorization}`, 
     } 
   }) 
    .then (res => getResponseData(res))
-   .then (res => {
-    likeApiHandler(res, card);
-
-   })
-   .catch((err) => {
-    console.log(err);
-   })
  };
 
  //=================
  //Функция меняет аватар и отправляет его на сервер
  //=================
 
- export const changeAvatar = (link, changeAvatarHandler) => {
-   fetch(`${config.source}/users/me/avatar`, {
+ export const changeAvatar = (link) => {
+   return fetch(`${config.source}/users/me/avatar`, {
      method: `PATCH`,
      headers: {
        authorization: `${config.headers.authorization}`,
@@ -172,12 +141,6 @@ export const getProfile = () => {
      })
     })
     .then (res => getResponseData(res))
-    .then (() => {
-      changeAvatarHandler();
-    })
-    .catch((err) => {
-     console.log(err);
-    })
  }; 
 
 

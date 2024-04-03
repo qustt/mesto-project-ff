@@ -5,17 +5,41 @@
 //=================
 //Функция содания карты
 //=================
-export function createCard(name, link, imageClickListener, cardTemplate) {
+export function createCard(name, link, imageClickListener, cardTemplate, element, deleteCardAPI, deleteCardApiHandler, likes, deleteLike, pushLike, likeApiHandler, userId) {
     const cardElement = cardTemplate.querySelector('.card').cloneNode(true);
     const deleteButton = cardElement.querySelector('.card__delete-button');
+    const likeButton = cardElement.querySelector('.card__like-button');
     const cardImage = cardElement.querySelector('.card__image');
     const cardTitle = cardElement.querySelector('.card__title');
+    const span = cardElement.querySelector('.likes');
+    span.textContent = likes.length;
     cardImage.src = link;
     cardImage.alt = name;
     cardTitle.textContent = name;
     cardImage.addEventListener('click', imageClickListener);
+    deleteButton.addEventListener('click', function(){
+      deleteCardAPI(element._id)
+      .then( res => {
+          deleteCardApiHandler(res, cardElement);
+          })
+          .catch((err) => {
+            console.log(err);
+           })
+        }, true);
+
+    likeButton.addEventListener('click', function (){
+          likeHandler(likeButton, element._id, cardElement, deleteLike, pushLike, likeApiHandler);
+        });
+    checkOwner(element, cardElement, userId);
+    loadUserLikes(likes, cardElement, userId);
     return(cardElement);
-}
+    };
+
+
+
+
+    
+
 //=================
 //Создаем функцию-обработчик лайка
 //=================
@@ -59,10 +83,18 @@ export function deleteCard(card) {
 //=================
 export function likeHandler (likeButton, cardId, card, deleteLike, pushLike, likeApiHandler) {
   if (likeButton.classList.contains('card__like-button_is-active')){
-    deleteLike(cardId, card, likeApiHandler);
+    deleteLike(cardId)
+    .then((res) => likeApiHandler(res, card))
+    .catch((err) => {
+      console.log(err);
+     })
   }
   else {
-    pushLike(cardId, card, likeApiHandler);
+    pushLike(cardId)
+    .then((res) => likeApiHandler(res, card))
+    .catch((err) => {
+      console.log(err);
+     })
   }
 };
 
@@ -85,18 +117,6 @@ export const addLikes = (likes, card) => {
 };
 
  //=================
- //Функция добавляет слушатель к кнопке лайка
- //=================
-export const addLikeListener = (card, element, deleteLike, pushLike, likeApiHandler) => {
-  const likeButton = card.querySelector('.card__like-button');
-  likeButton.addEventListener('click', function (){
-    likeHandler(likeButton, element._id, card, deleteLike, pushLike, likeApiHandler);
-  });
-  return card;
-};
-
-
- //=================
  //Функция добавляет пользовательские лайки на страницу
  //=================
 export const loadUserLikes = (likes, card, userId) => {
@@ -109,15 +129,3 @@ export const loadUserLikes = (likes, card, userId) => {
   return card;
 };
 
- //=================
- //Функция добавляет слушатель к кнопке корзины
- //=================
-export const addDeleteListener = (card, deleteCardAPI, element, deleteCardApiHandler) => {
-  const delBut = card.querySelector('.card__delete-button');
-  if (delBut){
-    delBut.addEventListener('click', function(){
-      deleteCardAPI(element._id, card, deleteCardApiHandler);
-    }, true);
-  };
-  return card;
-};

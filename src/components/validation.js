@@ -84,11 +84,9 @@ function hasInvalidInput(inputList) {
 
 export function toggleButtonState(obj, inputList, buttonElement) {
   if (hasInvalidInput(inputList)) {
-    buttonElement.classList.add(obj.inactiveButtonClass);
-    buttonElement.setAttribute("disabled", "disabled");
+    disableButton(obj, buttonElement);
   } else {
-    buttonElement.classList.remove(obj.inactiveButtonClass);
-    buttonElement.removeAttribute("disabled");
+    enableButton(obj, buttonElement);
   }
 }
 
@@ -107,4 +105,14 @@ export function clearValidation(profileForm, validationConfig) {
   inputElements.forEach((element) => {
     hideInputError(validationConfig, profileForm, element);
   });
+};
+
+export function disableButton(obj, button){
+  button.classList.add(obj.inactiveButtonClass);
+  button.setAttribute("disabled", "disabled");
+};
+
+export function enableButton(obj, button){
+  button.classList.remove(obj.inactiveButtonClass);
+  button.removeAttribute("disabled");
 };
